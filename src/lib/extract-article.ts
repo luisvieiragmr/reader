@@ -106,14 +106,18 @@ function sanitize(html: string): string {
   return `${clean.slice(0, MAX_BODY_CHARS)}<p>…</p>`;
 }
 
-export async function extractArticle(rawUrl: string): Promise<ExtractedArticle> {
-  const url = normalizeUrl(rawUrl);
-  const article = await extract(url, {
+function fetchArticle(articleUrl: string): Promise<Response> {
+  return fetch(articleUrl, {
     headers: {
       "user-agent": USER_AGENT,
       accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
     },
   });
+}
+
+export async function extractArticle(rawUrl: string): Promise<ExtractedArticle> {
+  const url = normalizeUrl(rawUrl);
+  const article = await extract(url, undefined, fetchArticle);
 
   if (!article) {
     throw new Error("Could not extract article content from that URL.");
