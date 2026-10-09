@@ -95,8 +95,8 @@
 }
 
 .dark {
-  --background: oklch(0.145 0.005 60);
-  --foreground: oklch(0.97 0.004 90);
+  --background: #0c0c0c;
+  --foreground: #f4f4f4;
   --card: oklch(0.18 0.006 60);
   --card-foreground: oklch(0.97 0.004 90);
   --popover: oklch(0.18 0.006 60);
@@ -133,6 +133,11 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    color-scheme: dark;
+    background: #0c0c0c;
+  }
+
   html,
   body {
     min-height: 100%;
@@ -140,6 +145,8 @@
 
   body {
     @apply bg-background text-foreground;
+    background: #0c0c0c;
+    color: #f4f4f4;
     font-family: var(--font-sans);
   }
 
@@ -150,8 +157,8 @@
 }
 
 .article-shell {
-  background: #fbfbfa;
-  color: #1c1c1c;
+  background: #0c0c0c;
+  color: #f4f4f4;
 }
 
 .article-measure {
@@ -164,7 +171,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #8a8a8a;
+  color: #8d8d8d;
   font-weight: 500;
 }
 
@@ -174,20 +181,20 @@
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.12;
-  color: #111;
+  color: #f7f7f7;
 }
 
 .article-meta {
   font-family: var(--font-sans);
   font-size: 0.95rem;
-  color: #8b8b8b;
+  color: #8d8d8d;
 }
 
 .article-body {
   font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
   font-size: 1.18rem;
   line-height: 1.72;
-  color: #2a2a2a;
+  color: #e8e8e8;
 }
 
 .article-body ::selection {
@@ -203,7 +210,7 @@
   font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #111;
+  color: #f7f7f7;
   margin-top: 1.6em;
   margin-bottom: 0.5em;
   line-height: 1.25;
@@ -235,8 +242,8 @@
 .article-body blockquote {
   margin: 1.4em 0;
   padding-left: 1em;
-  border-left: 2px solid #e4e4e4;
-  color: #444;
+  border-left: 2px solid #2a2a2a;
+  color: #cfcfcf;
 }
 
 .article-body ul,
@@ -255,7 +262,7 @@
 .article-body figcaption {
   font-family: var(--font-sans);
   font-size: 0.85rem;
-  color: #8b8b8b;
+  color: #8d8d8d;
   margin-top: 0.5em;
 }
 
