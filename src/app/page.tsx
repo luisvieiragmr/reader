@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { QueueView } from "@/components/queue-view";
 
 export default function Home() {
-  return <QueueView />;
+  return (
+    <Suspense fallback={null}>
+      <QueueView />
+    </Suspense>
+  );
 }

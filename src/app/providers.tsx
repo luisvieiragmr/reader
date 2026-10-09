@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Theme } from "@astryxdesign/core/theme";
 import { LinkProvider } from "@astryxdesign/core/Link";
 import { neutralTheme } from "@/themes/neutral/neutralTheme";
@@ -9,14 +8,11 @@ import { ConvexClientProvider } from "./ConvexClientProvider";
 import type { ReactNode } from "react";
 
 export function Providers({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const isReader = pathname.startsWith("/read");
-
   return (
     <ConvexClientProvider>
-      <Theme theme={neutralTheme} mode={isReader ? "light" : "dark"}>
+      <Theme theme={neutralTheme} mode="dark">
         <LinkProvider component={Link}>
-          <div className={isReader ? "light min-h-full" : "dark min-h-full"}>
+          <div className="dark min-h-full bg-[#0c0c0c] text-[#f4f4f4]">
             {children}
           </div>
         </LinkProvider>

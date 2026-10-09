@@ -28,9 +28,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${figtree.variable} ${figtree.className} ${sourceSerif.variable} ${geistMono.variable} h-full antialiased`}
+      className={`dark ${figtree.variable} ${figtree.className} ${sourceSerif.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="flex min-h-full flex-col bg-[#0c0c0c] font-sans text-[#f4f4f4]">
         <Suspense fallback={null}>
           <Providers>{children}</Providers>
         </Suspense>
