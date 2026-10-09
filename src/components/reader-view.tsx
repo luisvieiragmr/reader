@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
+import { AppChrome } from "@/components/app-chrome";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function formatDate(value?: number): string | null {
@@ -30,68 +29,61 @@ function formatMeta(wordCount: number, publishedAt?: number): string {
   return parts.join("   ");
 }
 
-export function ReaderView({ id }: { id: Id<"articles"> }) {
+function ReaderBody({ id }: { id: Id<"articles"> }) {
   const article = useQuery(api.articles.get, { id });
 
   if (article === undefined) {
     return (
-      <main className="article-shell min-h-dvh px-5 py-8">
-        <div className="article-measure">
-          <Skeleton className="mb-8 h-8 w-20" />
-          <Skeleton className="mb-3 h-4 w-40" />
-          <Skeleton className="mb-4 h-12 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      </main>
+      <div className="article-measure w-full px-5 pb-28 pt-8 sm:px-0 md:pb-36">
+        <Skeleton className="mb-3 h-4 w-40 bg-white/8" />
+        <Skeleton className="mb-4 h-12 w-full bg-white/8" />
+        <Skeleton className="h-32 w-full bg-white/8" />
+      </div>
     );
   }
 
   if (article === null) {
     return (
-      <main className="article-shell flex min-h-dvh items-center justify-center px-5">
-        <div className="article-measure text-center">
-          <h1 className="article-title mb-3">Article not found</h1>
-          <p className="article-meta mb-6">
-            It may have been removed from your queue.
-          </p>
-          <Button asChild>
-            <Link href="/">Back to Queue</Link>
-          </Button>
-        </div>
-      </main>
+      <div className="article-measure w-full px-5 pb-28 pt-16 text-center md:pb-36">
+        <h1 className="article-title mb-3">Article not found</h1>
+        <p className="article-meta">It may have been removed from your queue.</p>
+      </div>
     );
   }
 
   const byline = [article.author, article.source].filter(Boolean).join(" · ");
 
   return (
-    <main className="article-shell min-h-dvh">
-      <div className="article-measure px-5 pb-24 pt-4 sm:px-0 sm:pt-8">
-        <header className="mb-8 flex items-center justify-between">
-          <Button asChild variant="ghost" size="sm" className="-ml-2">
-            <Link href="/">← Queue</Link>
-          </Button>
-          <a
-            href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-black/45 hover:text-black/70"
-          >
-            Original
-          </a>
-        </header>
+    <div className="article-measure w-full px-5 pb-28 pt-8 sm:px-0 md:pb-36 md:pt-10">
+      {byline ? <p className="article-kicker mb-3">{byline}</p> : null}
+      <h1 className="article-title">{article.title}</h1>
+      <p className="article-meta mt-4">
+        {formatMeta(article.wordCount, article.publishedAt)}
+        {article.wordCount > 0 || article.publishedAt ? "   " : null}
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/45 hover:text-white/70"
+        >
+          Original
+        </a>
+      </p>
 
-        {byline ? <p className="article-kicker mb-3">{byline}</p> : null}
-        <h1 className="article-title">{article.title}</h1>
-        <p className="article-meta mt-4">
-          {formatMeta(article.wordCount, article.publishedAt)}
-        </p>
+      <article
+        className="article-body mt-8"
+        dangerouslySetInnerHTML={{ __html: article.bodyHtml }}
+      />
+    </div>
+  );
+}
 
-        <article
-          className="article-body mt-8"
-          dangerouslySetInnerHTML={{ __html: article.bodyHtml }}
-        />
+export function ReaderView({ id }: { id: Id<"articles"> }) {
+  return (
+    <AppChrome>
+      <div className="article-shell flex flex-1 flex-col">
+        <ReaderBody id={id} />
       </div>
-    </main>
+    </AppChrome>
   );
 }

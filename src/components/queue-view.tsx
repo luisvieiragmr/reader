@@ -1,93 +1,30 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
-import {
-  AlignJustify,
-  ChevronDown,
-  Home,
-  Plus,
-  Search,
-} from "lucide-react";
 import { api } from "../../convex/_generated/api";
-import { AddUrlForm } from "@/components/add-url-form";
+import { AppChrome, getQueueTab } from "@/components/app-chrome";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "cn";
+import { useState } from "react";
 
 export function QueueView() {
   const articles = useQuery(api.articles.list);
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [tab, setTab] = useState<"home" | "search" | "list">("home");
+  const searchParams = useSearchParams();
+  const tab = getQueueTab(searchParams.get("tab"));
   const [query, setQuery] = useState("");
 
   const filtered = (articles ?? []).filter((article) => {
     if (tab !== "search" || !query.trim()) {
       return true;
     }
-    const haystack = `${article.title} ${article.author ?? ""} ${article.source ?? ""}`.toLowerCase();
+    const haystack =
+      `${article.title} ${article.author ?? ""} ${article.source ?? ""}`.toLowerCase();
     return haystack.includes(query.trim().toLowerCase());
   });
 
   return (
-    <main className="queue-shell flex min-h-dvh flex-col bg-[#0c0c0c] text-[#f4f4f4]">
-      <header className="queue-topbar sticky top-0 z-10 bg-[#0c0c0c]">
-        <div className="queue-frame mx-auto flex h-12 w-full items-center justify-between px-[1.15rem] md:h-[4.5rem] md:px-[clamp(2.5rem,5vw,5.5rem)]">
-          <div className="relative">
-            <button
-              type="button"
-              className="queue-nav-title inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-[1.28rem] font-semibold tracking-tight text-[#f7f7f7] hover:bg-white/6 md:text-[1.85rem]"
-              aria-haspopup="listbox"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              Queue
-              <ChevronDown
-                className={cn(
-                  "size-4 text-white/55 md:size-5",
-                  menuOpen && "rotate-180",
-                )}
-                strokeWidth={2}
-              />
-            </button>
-            {menuOpen ? (
-              <div
-                role="listbox"
-                className="absolute left-0 top-full z-20 mt-1 min-w-40 rounded-lg border border-white/10 bg-[#1a1a1a] py-1 shadow-lg"
-              >
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected
-                  className="block w-full px-3 py-2 text-left text-sm text-white md:text-base"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Queue
-                </button>
-              </div>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            className="flex size-9 items-center justify-center rounded-full text-white/90 hover:bg-white/8 md:size-11"
-            aria-label="Add article"
-            onClick={() => {
-              setComposerOpen((open) => !open);
-              setTab("home");
-            }}
-          >
-            <Plus className="size-5 md:size-6" strokeWidth={1.75} />
-          </button>
-        </div>
-        <hr className="border-0 border-t border-white/12" />
-        {composerOpen ? (
-          <div className="queue-frame mx-auto w-full px-[1.15rem] py-3 md:px-[clamp(2.5rem,5vw,5.5rem)] md:py-4">
-            <AddUrlForm onCancel={() => setComposerOpen(false)} />
-          </div>
-        ) : null}
-      </header>
-
+    <AppChrome>
       {tab === "search" ? (
         <div className="queue-frame mx-auto w-full px-[1.15rem] pt-4 md:px-[clamp(2.5rem,5vw,5.5rem)] md:pt-6">
           <input
@@ -154,61 +91,6 @@ export function QueueView() {
           </>
         )}
       </section>
-
-      <nav
-        className="queue-tabbar fixed bottom-[1.1rem] left-1/2 z-20 flex w-[min(22.5rem,calc(100%-1.5rem))] -translate-x-1/2 items-center justify-around rounded-full bg-[rgb(38_38_38_/_92%)] py-[0.7rem] shadow-[0_8px_32px_rgb(0_0_0_/_35%)] md:bottom-7 md:w-[min(36rem,calc(100%-3rem))] md:py-4"
-        aria-label="Primary"
-      >
-        <button
-          type="button"
-          className={cn(
-            "queue-tab relative flex h-8 w-[4.5rem] items-center justify-center text-[#cfcfcf] md:h-9 md:w-24",
-            tab === "home" && "is-active text-white",
-          )}
-          aria-current={tab === "home" ? "page" : undefined}
-          aria-label="Home"
-          onClick={() => {
-            setTab("home");
-            setQuery("");
-          }}
-        >
-          {tab === "home" ? (
-            <span className="queue-tab-dot absolute top-[-0.2rem] size-[0.28rem] rounded-full bg-white" />
-          ) : null}
-          <Home
-            className="size-5 md:size-6"
-            strokeWidth={1.6}
-            fill={tab === "home" ? "currentColor" : "none"}
-          />
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "queue-tab relative flex h-8 w-[4.5rem] items-center justify-center text-[#cfcfcf] md:h-9 md:w-24",
-            tab === "search" && "is-active text-white",
-          )}
-          aria-current={tab === "search" ? "page" : undefined}
-          aria-label="Search"
-          onClick={() => setTab("search")}
-        >
-          <Search className="size-5 md:size-6" strokeWidth={1.6} />
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "queue-tab relative flex h-8 w-[4.5rem] items-center justify-center text-[#cfcfcf] md:h-9 md:w-24",
-            tab === "list" && "is-active text-white",
-          )}
-          aria-current={tab === "list" ? "page" : undefined}
-          aria-label="Lists"
-          onClick={() => {
-            setTab("list");
-            setQuery("");
-          }}
-        >
-          <AlignJustify className="size-5 md:size-6" strokeWidth={1.6} />
-        </button>
-      </nav>
-    </main>
+    </AppChrome>
   );
 }
