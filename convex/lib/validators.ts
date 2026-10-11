@@ -3,6 +3,7 @@ import { v } from "convex/values";
 export const articleDoc = v.object({
   _id: v.id("articles"),
   _creationTime: v.number(),
+  userId: v.optional(v.string()),
   url: v.string(),
   title: v.string(),
   author: v.optional(v.string()),
@@ -17,6 +18,7 @@ export const articleDoc = v.object({
 export const articleSummary = v.object({
   _id: v.id("articles"),
   _creationTime: v.number(),
+  userId: v.optional(v.string()),
   url: v.string(),
   title: v.string(),
   author: v.optional(v.string()),

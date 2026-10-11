@@ -1,8 +1,8 @@
 # Queue
 
-A Matter-style read-later web app: paste a public article URL, save its content, and open it in a quiet reader.
+A Matter-style read-later web app: sign in, paste a public article URL, save it to your queue, and open it in a quiet reader.
 
-No login. No audio.
+Articles are **per user**. Signed-out visitors see a login surface on `/` — never another user’s queue. No audio.
 
 ## Run locally
 
@@ -17,9 +17,30 @@ In a second terminal:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), paste a public article URL, and save it.
+Open [http://localhost:3000](http://localhost:3000). When signed out you get the Queue login screen; after sign-in you see only your saved articles.
 
 `npx convex dev` writes `.env.local` with `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL`. Cloud agents can set `CONVEX_AGENT_MODE=anonymous` so Convex uses an isolated anonymous deployment instead of a personal login.
+
+## Auth (Clerk + Convex)
+
+1. **Clerk app keys** in `.env.local`: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and the redirect URLs (see `.env.example`).
+2. **Convex JWT issuer** on the Convex deployment (already set for the linked dev deployment if you used this repo’s setup):
+
+   ```bash
+   npx convex env set CLERK_JWT_ISSUER_DOMAIN https://YOUR_SUBDOMAIN.clerk.accounts.dev
+   ```
+
+   Get the URL from Clerk Dashboard → [Convex integration](https://dashboard.clerk.com/~/integrations) (activate Convex) or API Keys → Frontend API URL.
+3. **Clerk JWT for Convex** (required unless the Convex integration already issues `aud: "convex"`):
+   - Clerk Dashboard → **JWT Templates** → **New template** → **Convex**
+   - Name must be exactly `convex`
+   - Save, then reload the app
+
+`convex/auth.config.ts` validates tokens with `applicationID: "convex"`. The client uses `ConvexProviderWithClerk`.
+
+### Existing articles (pre-auth)
+
+Rows saved before per-user auth have no `userId`. They are left **orphaned** and do not appear in anyone’s queue. New saves always attach `userId` from `ctx.auth.getUserIdentity().tokenIdentifier`.
 
 ## Astryx
 
@@ -38,6 +59,7 @@ CLI 0.6.6 does not support `theme add --import` from the public docs; `theme add
 ## Stack
 
 - Next.js App Router 16
+- Clerk (auth UI + JWT)
 - Astryx (UI) + shadcn/ui + Tailwind CSS v4
-- Convex (article storage)
+- Convex (per-user article storage)
 - `@extractus/article-extractor` (title, author, date, body)

@@ -3,6 +3,8 @@ import { v } from "convex/values";
 
 export default defineSchema({
   articles: defineTable({
+    // Clerk tokenIdentifier. Optional only so pre-auth rows can exist as orphans.
+    userId: v.optional(v.string()),
     url: v.string(),
     title: v.string(),
     author: v.optional(v.string()),
@@ -12,5 +14,7 @@ export default defineSchema({
     imageUrl: v.optional(v.string()),
     bodyHtml: v.string(),
     wordCount: v.number(),
-  }).index("by_url", ["url"]),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_url", ["userId", "url"]),
 });

@@ -9,6 +9,7 @@
  */
 
 import type * as articles from "../articles.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as lib_validators from "../lib/validators.js";
 
 import type {
@@ -19,6 +20,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   articles: typeof articles;
+  "lib/auth": typeof lib_auth;
   "lib/validators": typeof lib_validators;
 }>;
 

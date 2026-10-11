@@ -1,16 +1,23 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireUserId } from "./lib/auth";
 import { articleDoc, articleSummary } from "./lib/validators";
 
 export const list = query({
   args: {},
   returns: v.array(articleSummary),
   handler: async (ctx) => {
-    const rows = await ctx.db.query("articles").order("desc").take(100);
+    const userId = await requireUserId(ctx);
+    const rows = await ctx.db
+      .query("articles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(100);
     return rows.map(
       ({
         _id,
         _creationTime,
+        userId: rowUserId,
         url,
         title,
         author,
@@ -22,6 +29,7 @@ export const list = query({
       }) => ({
         _id,
         _creationTime,
+        userId: rowUserId,
         url,
         title,
         author,
@@ -39,7 +47,12 @@ export const get = query({
   args: { id: v.id("articles") },
   returns: v.union(articleDoc, v.null()),
   handler: async (ctx, args) => {
-    return await ctx.db.get("articles", args.id);
+    const userId = await requireUserId(ctx);
+    const article = await ctx.db.get("articles", args.id);
+    if (!article || article.userId !== userId) {
+      return null;
+    }
+    return article;
   },
 });
 
@@ -47,9 +60,12 @@ export const getByUrl = query({
   args: { url: v.string() },
   returns: v.union(articleDoc, v.null()),
   handler: async (ctx, args) => {
+    const userId = await requireUserId(ctx);
     return await ctx.db
       .query("articles")
-      .withIndex("by_url", (q) => q.eq("url", args.url))
+      .withIndex("by_user_and_url", (q) =>
+        q.eq("userId", userId).eq("url", args.url),
+      )
       .unique();
   },
 });
@@ -68,9 +84,12 @@ export const save = mutation({
   },
   returns: v.id("articles"),
   handler: async (ctx, args) => {
+    const userId = await requireUserId(ctx);
     const existing = await ctx.db
       .query("articles")
-      .withIndex("by_url", (q) => q.eq("url", args.url))
+      .withIndex("by_user_and_url", (q) =>
+        q.eq("userId", userId).eq("url", args.url),
+      )
       .unique();
 
     if (existing) {
@@ -87,6 +106,9 @@ export const save = mutation({
       return existing._id;
     }
 
-    return await ctx.db.insert("articles", args);
+    return await ctx.db.insert("articles", {
+      userId,
+      ...args,
+    });
   },
 });
