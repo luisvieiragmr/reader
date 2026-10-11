@@ -3,6 +3,12 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
 import { AlignJustify, ChevronDown, Home, Plus, Search } from "lucide-react";
 import { AddUrlForm } from "@/components/add-url-form";
 import { cn } from "cn";
@@ -81,22 +87,51 @@ export function AppChrome({ children }: { children: ReactNode }) {
               </div>
             ) : null}
           </div>
-          <button
-            type="button"
-            className="flex size-9 items-center justify-center rounded-full text-white/90 hover:bg-white/8 md:size-11"
-            aria-label="Add article"
-            onClick={() => {
-              setComposerOpen((open) => !open);
-              if (!onQueue) {
-                return;
-              }
-              if (tab !== "home") {
-                router.push("/");
-              }
-            }}
-          >
-            <Plus className="size-5 md:size-6" strokeWidth={1.75} />
-          </button>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="rounded-md px-2.5 py-1.5 text-sm font-medium text-white/80 hover:bg-white/8 hover:text-white md:px-3 md:text-base"
+                >
+                  Sign in
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button
+                  type="button"
+                  className="rounded-md px-2.5 py-1.5 text-sm font-medium text-white/80 hover:bg-white/8 hover:text-white md:px-3 md:text-base"
+                >
+                  Sign up
+                </button>
+              </SignUpButton>
+            </Show>
+            <Show when="signed-in">
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "size-8 md:size-9",
+                  },
+                }}
+              />
+            </Show>
+            <button
+              type="button"
+              className="flex size-9 items-center justify-center rounded-full text-white/90 hover:bg-white/8 md:size-11"
+              aria-label="Add article"
+              onClick={() => {
+                setComposerOpen((open) => !open);
+                if (!onQueue) {
+                  return;
+                }
+                if (tab !== "home") {
+                  router.push("/");
+                }
+              }}
+            >
+              <Plus className="size-5 md:size-6" strokeWidth={1.75} />
+            </button>
+          </div>
         </div>
         <hr className="border-0 border-t border-white/12" />
         {composerOpen ? (

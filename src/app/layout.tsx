@@ -1,3 +1,5 @@
+import { ClerkProvider } from "@clerk/nextjs";
+import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Figtree, Geist_Mono, Source_Serif_4 } from "next/font/google";
@@ -31,9 +33,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`dark ${figtree.variable} ${figtree.className} ${sourceSerif.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-[#0c0c0c] font-sans text-[#f4f4f4]">
-        <Suspense fallback={null}>
-          <Providers>{children}</Providers>
-        </Suspense>
+        <ClerkProvider appearance={{ theme: shadcn }}>
+          <Suspense fallback={null}>
+            <Providers>{children}</Providers>
+          </Suspense>
+        </ClerkProvider>
       </body>
     </html>
   );
