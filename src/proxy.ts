@@ -4,6 +4,8 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  // MCP uses Bearer MCP_SECRET, not Clerk session cookies.
+  "/api/mcp(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

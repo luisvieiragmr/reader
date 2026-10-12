@@ -56,6 +56,10 @@ Astryx is a design system (Theme, Button, tokens, CSS). It does not store or fet
 
 CLI 0.6.6 does not support `theme add --import` from the public docs; `theme add neutral` scaffolds the Neutral theme into `src/themes/neutral/`. CSS follows the documented Tailwind path in `src/app/globals.css`.
 
+## MCP (save from Cursor)
+
+HTTP MCP server for `save_article` / `list_articles`. Code lives in [`mcp/`](./mcp/); served at `/api/mcp`. See [`mcp/README.md`](./mcp/README.md) for env vars, local run, Cursor config, and Vercel notes.
+
 ## Stack
 
 - Next.js App Router 16
@@ -63,3 +67,4 @@ CLI 0.6.6 does not support `theme add --import` from the public docs; `theme add
 - Astryx (UI) + shadcn/ui + Tailwind CSS v4
 - Convex (per-user article storage)
 - `@extractus/article-extractor` (title, author, date, body)
+- MCP Streamable HTTP (`mcp-handler`) for agent save tools
