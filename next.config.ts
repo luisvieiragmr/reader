@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   devIndicators: false,
-  serverExternalPackages: ["@extractus/article-extractor", "sanitize-html"],
+  // Bundle sanitize-html so its CommonJS entry can load the ESM-only htmlparser2.
+  serverExternalPackages: ["@extractus/article-extractor"],
   turbopack: {
     rules: {
       "*.css": {
