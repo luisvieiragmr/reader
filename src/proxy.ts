@@ -4,7 +4,8 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
-  // MCP uses Bearer MCP_SECRET, not Clerk session cookies.
+  // OAuth discovery is public; MCP validates its own OAuth bearer token.
+  "/.well-known(.*)",
   "/api/mcp(.*)",
 ]);
 

@@ -1,4 +1,4 @@
-import { env, mutation, query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { requireUserId } from "./lib/auth";
@@ -28,21 +28,6 @@ type SaveFields = {
   bodyHtml: string;
   wordCount: number;
 };
-
-function requireMcpSecret(secret: string): void {
-  const expected = env.MCP_SECRET;
-  if (!expected || secret !== expected) {
-    throw new Error("Unauthorized");
-  }
-}
-
-function requireMcpUserId(): string {
-  const userId = env.MCP_USER_TOKEN_IDENTIFIER;
-  if (!userId) {
-    throw new Error("MCP_USER_TOKEN_IDENTIFIER is not configured on Convex");
-  }
-  return userId;
-}
 
 async function upsertArticle(
   ctx: MutationCtx,
@@ -153,37 +138,5 @@ export const save = mutation({
   handler: async (ctx, args) => {
     const userId = await requireUserId(ctx);
     return await upsertArticle(ctx, userId, args);
-  },
-});
-
-/** MCP / server-secret save. Attributes to MCP_USER_TOKEN_IDENTIFIER. */
-export const saveFromMcp = mutation({
-  args: {
-    secret: v.string(),
-    ...saveFields,
-  },
-  returns: v.id("articles"),
-  handler: async (ctx, args) => {
-    requireMcpSecret(args.secret);
-    const userId = requireMcpUserId();
-    const { secret, ...fields } = args;
-    void secret;
-    return await upsertArticle(ctx, userId, fields);
-  },
-});
-
-/** MCP / server-secret list for the configured user. */
-export const listFromMcp = query({
-  args: { secret: v.string() },
-  returns: v.array(articleSummary),
-  handler: async (ctx, args) => {
-    requireMcpSecret(args.secret);
-    const userId = requireMcpUserId();
-    const rows = await ctx.db
-      .query("articles")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .order("desc")
-      .take(100);
-    return rows.map(toSummary);
   },
 });
