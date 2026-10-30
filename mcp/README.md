@@ -88,3 +88,29 @@ Production:
 4. Point Cursor at `https://<your-app>.vercel.app/api/mcp` with the Bearer header above.
 
 Code lives in `mcp/` (easy to read). The Next route `src/app/api/mcp/route.ts` is a thin wrapper so Vercel can host it.
+
+## Custom OAuth consent page
+
+Reader hosts Clerk's prebuilt consent screen at `/oauth-consent` for instances
+that cannot use the hosted Account Portal (including production `vercel.app`
+instances). The route uses the existing Clerk session protection; signed-out
+visitors are sent to the home page. In the OAuth flow, Clerk handles sign-in
+before redirecting to consent and supplies the authorization query parameters.
+
+After deploying this route:
+
+1. Select the matching application and instance in Clerk Dashboard.
+2. Under **Configure → Paths → Component paths → OAuth consent**, set the
+   production URL to `https://<your-app>.vercel.app/oauth-consent` (use your actual
+   app domain). In development, use `/oauth-consent` relative to the development host.
+3. Save the path, then enable consent for the OAuth application. Keep consent enabled.
+4. Start a real OAuth authorization request and verify that both Allow and Deny
+   return to the registered client callback. Opening the page without OAuth query
+   parameters is not a complete consent-flow test.
+
+The page preserves Clerk's application identity, scope display, and Allow/Deny
+handling. Its referrer policy allows Clerk's cross-origin consent submission.
+This route alone does **not** enable OAuth on `/api/mcp`: that endpoint still uses
+`MCP_SECRET` until discovery and OAuth access-token validation are implemented.
+
+Reference: [Clerk custom consent setup](https://clerk.com/docs/nextjs/guides/configure/auth-strategies/oauth/custom-consent-page).
