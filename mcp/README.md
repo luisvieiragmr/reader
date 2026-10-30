@@ -1,116 +1,60 @@
-# Reader MCP (HTTP)
+# Reader MCP with Clerk OAuth
 
-A small **Model Context Protocol** server that saves articles into Queue using the same extract → Convex pipeline as the web app.
+Endpoint: `https://<your-app>/api/mcp` (Streamable HTTP).
 
-**Transport:** Streamable HTTP (not stdio).  
-**Vercel:** Yes — mount the handler as a Next.js route (`/api/mcp`) on this app, or point a Vercel project at this repo. Serverless caveats: cold starts and the Function request timeout (article fetch + extract can be slow; raise `maxDuration` if needed).
+`save_article` extracts and saves a public URL; `list_articles` returns the user's
+100 most recent articles. Both require a Clerk OAuth JWT with `profile` scope.
+This integration uses that scope to authorize access to the signed-in user's
+Reader queue. The verified token is forwarded to Convex, which derives ownership
+from its issuer and subject (`tokenIdentifier`), exactly as the web app does.
+There is no client-supplied owner and no shared-secret fallback.
 
-## How it works
+## Deployment configuration
 
-1. Cursor (or any MCP client) calls `POST /api/mcp` with `Authorization: Bearer <MCP_SECRET>`.
-2. Tool `save_article` extracts the URL (same code as the app) and calls Convex `articles.saveFromMcp`.
-3. That mutation checks the secret again and attaches the article to `MCP_USER_TOKEN_IDENTIFIER` (your Clerk `tokenIdentifier`), so it shows up in that user’s queue.
+Set in the Next.js deployment:
 
-No Clerk login inside MCP for v1 — saves always go to the configured user.
+- Existing `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `NEXT_PUBLIC_CONVEX_URL`.
+- `CLERK_JWT_ISSUER_DOMAIN`: exact Clerk issuer URL, matching the web app's Convex provider.
+- `MCP_RESOURCE_URL`: canonical full HTTPS MCP URL, e.g. `https://reader.example.com/api/mcp`.
 
-## Tools
+Set in the matching Convex deployment:
 
-| Tool | Args | What it does |
-|------|------|----------------|
-| `save_article` | `url` (required) | Extract + save |
-| `list_articles` | (none) | List recent articles for the configured user |
+- Existing `CLERK_JWT_ISSUER_DOMAIN`.
+- `MCP_RESOURCE_URL`: the exact same value as Next.js. Deploy the updated backend
+  after setting this value; auth.config.ts is evaluated at deployment time.
 
-## Env vars (names only)
+The original `convex` audience continues to support web sessions. The additional
+MCP audience accepts Clerk JWTs minted for this resource. Never omit audience
+validation or use an OAuth client ID as the resource URL. The old `MCP_SECRET`
+and `MCP_USER_TOKEN_IDENTIFIER` are no longer used and may be removed.
 
-Set in **Next.js** (`.env.local` / Vercel project):
+## Clerk settings
 
-- `MCP_SECRET` — bearer token for MCP HTTP
-- `MCP_USER_TOKEN_IDENTIFIER` — also required on Convex (see below)
-- `NEXT_PUBLIC_CONVEX_URL` — already used by the app
+1. Use the same production Clerk instance as Reader's web app.
+2. Configure **Paths → OAuth consent** to the deployed `/oauth-consent` page.
+3. Enable consent and **Publish CIMD support**. Your selected **Any compatible
+   client** admission setting allows ChatGPT to onboard without manual registration.
+4. Select **JWT access tokens**. Enable the access-token audience (`aud`) claim
+   so the requested OAuth `resource` is included. Opaque tokens and tokens missing
+   the MCP audience are rejected.
+5. Allow `profile` scope for the client; set it as a default scope for dynamic
+   clients if needed. Reconnect existing clients after changing token settings.
 
-Set on the **Convex deployment** (`npx convex env set …`):
+## Connect and verify
 
-- `MCP_SECRET` — same value as Next (mutation double-check)
-- `MCP_USER_TOKEN_IDENTIFIER` — Clerk tokenIdentifier for the owner (same string as `articles.userId` in the Convex dashboard for a row you saved while logged in)
+Create a ChatGPT MCP connection using the canonical `/api/mcp` URL and OAuth.
+ChatGPT discovers Clerk through the public endpoint
+`/.well-known/oauth-protected-resource/api/mcp`, also advertised by the HTTP 401
+challenge. Clerk hosts its own authorization-server discovery document.
 
-## Run locally
+Sign in and approve consent. Save an article and verify it appears in that user's
+Reader queue. Repeat with a different account and confirm the queues are separate.
+Verify Deny cancels authorization. Bare requests, expired tokens, wrong-audience
+tokens, and legacy shared secrets must not reach the tools.
 
-```bash
-# Terminal 1 — Convex
-npx convex env set MCP_SECRET <your-secret>
-npx convex env set MCP_USER_TOKEN_IDENTIFIER <your-tokenIdentifier>
-npx convex dev
+Local checks: `npx tsc --noEmit`, `npx vitest run`, and targeted ESLint.
+Full login/consent testing requires a deployed URL and configured Clerk instance.
 
-# Terminal 2 — Next (serves /api/mcp)
-# Add MCP_SECRET to .env.local (same value)
-npm run dev
-```
-
-Endpoint: `http://localhost:3000/api/mcp`
-
-## Cursor MCP config
-
-Add to `.cursor/mcp.json` (or Cursor Settings → MCP). Do not put the real secret in the file — use an env var:
-
-```json
-{
-  "mcpServers": {
-    "reader": {
-      "url": "http://localhost:3000/api/mcp",
-      "headers": {
-        "Authorization": "Bearer ${env:MCP_SECRET}"
-      }
-    }
-  }
-}
-```
-
-Production:
-
-```json
-{
-  "mcpServers": {
-    "reader": {
-      "url": "https://YOUR_DEPLOYMENT.vercel.app/api/mcp",
-      "headers": {
-        "Authorization": "Bearer ${env:MCP_SECRET}"
-      }
-    }
-  }
-}
-```
-
-## Deploy on Vercel
-
-1. Deploy this Next.js app as usual.
-2. Set `MCP_SECRET` and `NEXT_PUBLIC_CONVEX_URL` on the Vercel project.
-3. Set `MCP_SECRET` and `MCP_USER_TOKEN_IDENTIFIER` on the Convex deployment.
-4. Point Cursor at `https://<your-app>.vercel.app/api/mcp` with the Bearer header above.
-
-Code lives in `mcp/` (easy to read). The Next route `src/app/api/mcp/route.ts` is a thin wrapper so Vercel can host it.
-
-## Custom OAuth consent page
-
-Reader hosts Clerk's prebuilt consent screen at `/oauth-consent` for instances
-that cannot use the hosted Account Portal (including production `vercel.app`
-instances). The route uses the existing Clerk session protection; signed-out
-visitors are sent to the home page. In the OAuth flow, Clerk handles sign-in
-before redirecting to consent and supplies the authorization query parameters.
-
-After deploying this route:
-
-1. Select the matching application and instance in Clerk Dashboard.
-2. Under **Configure → Paths → Component paths → OAuth consent**, set the
-   production URL to `https://<your-app>.vercel.app/oauth-consent` (use your actual
-   app domain). In development, use `/oauth-consent` relative to the development host.
-3. Save the path, then enable consent for the OAuth application. Keep consent enabled.
-4. Start a real OAuth authorization request and verify that both Allow and Deny
-   return to the registered client callback. Opening the page without OAuth query
-   parameters is not a complete consent-flow test.
-
-The page preserves Clerk's application identity, scope display, and Allow/Deny
-handling. Its referrer policy allows Clerk's cross-origin consent submission.
-This route alone does **not** enable OAuth on `/api/mcp`: that endpoint still uses
-`MCP_SECRET` until discovery and OAuth access-token validation are implemented.
-
-Reference: [Clerk custom consent setup](https://clerk.com/docs/nextjs/guides/configure/auth-strategies/oauth/custom-consent-page).
+References:
+- https://clerk.com/docs/nextjs/guides/ai/mcp/build-mcp-server
+- https://clerk.com/docs/nextjs/guides/configure/auth-strategies/oauth/custom-consent-page

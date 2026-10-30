@@ -1,3 +1,4 @@
+import { env } from "./_generated/server";
 import type { AuthConfig } from "convex/server";
 
 /**
@@ -9,8 +10,12 @@ import type { AuthConfig } from "convex/server";
 export default {
   providers: [
     {
-      domain: process.env.CLERK_JWT_ISSUER_DOMAIN!,
+      domain: env.CLERK_JWT_ISSUER_DOMAIN!,
       applicationID: "convex",
     },
+    ...(env.MCP_RESOURCE_URL ? [{
+      domain: env.CLERK_JWT_ISSUER_DOMAIN!,
+      applicationID: env.MCP_RESOURCE_URL,
+    }] : []),
   ],
 } satisfies AuthConfig;

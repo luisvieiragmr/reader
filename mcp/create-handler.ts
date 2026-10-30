@@ -1,26 +1,9 @@
-/**
- * Reader MCP server — Streamable HTTP tools for saving articles.
- *
- * Auth is a plain Bearer token (MCP_SECRET). We intentionally do not
- * publish OAuth discovery endpoints so Cursor can send static headers.
- */
-import { createMcpHandler } from "mcp-handler";
-import { timingSafeEqual } from "node:crypto";
+import { createMcpHandler, withMcpAuth } from "mcp-handler";
+import { auth } from "@clerk/nextjs/server";
+import { verifyClerkToken } from "@clerk/mcp-tools/next";
 import { z } from "zod";
 import { listArticlesForMcp, saveArticleForMcp } from "./save";
-
-function bearerMatches(header: string | null, secret: string): boolean {
-  if (!header?.startsWith("Bearer ")) {
-    return false;
-  }
-  const token = header.slice("Bearer ".length);
-  const a = Buffer.from(token);
-  const b = Buffer.from(secret);
-  if (a.length !== b.length) {
-    return false;
-  }
-  return timingSafeEqual(a, b);
-}
+import { getMcpConfig, verifyMcpJwt } from "./oauth";
 
 /** Build the MCP request handler (tools only — auth is applied in handleMcpRequest). */
 export function createReaderMcpHandler() {
@@ -30,17 +13,18 @@ export function createReaderMcpHandler() {
         "save_article",
         {
           title: "Save Article",
+          _meta: { securitySchemes: [{ type: "oauth2", scopes: ["profile"] }] },
           description:
-            "Fetch a public article URL, extract readable content, and save it to the Reader queue for the configured MCP user.",
+            "Fetch a public article URL, extract readable content, and save it to the Reader queue for the authenticated user.",
           inputSchema: z.object({
             url: z
               .string()
               .describe("Public http(s) URL of the article to save"),
           }),
         },
-        async ({ url }) => {
+        async ({ url }, { http }) => {
           try {
-            const result = await saveArticleForMcp(url);
+            const result = await saveArticleForMcp(url, http!.authInfo!.token);
             return {
               content: [
                 {
@@ -64,13 +48,14 @@ export function createReaderMcpHandler() {
         "list_articles",
         {
           title: "List Articles",
+          _meta: { securitySchemes: [{ type: "oauth2", scopes: ["profile"] }] },
           description:
-            "List recent articles in the configured MCP user’s Reader queue.",
+            "List recent articles in the authenticated user’s Reader queue.",
           inputSchema: z.object({}),
         },
-        async () => {
+        async (_args, { http }) => {
           try {
-            const articles = await listArticlesForMcp();
+            const articles = await listArticlesForMcp(http!.authInfo!.token);
             return {
               content: [
                 {
@@ -104,23 +89,21 @@ export function createReaderMcpHandler() {
 
 const mcpHandler = createReaderMcpHandler();
 
-/**
- * HTTP entry: require Authorization: Bearer <MCP_SECRET>, then MCP.
- */
+/** Require a Clerk OAuth token minted for this MCP resource. */
 export async function handleMcpRequest(request: Request): Promise<Response> {
-  const secret = process.env.MCP_SECRET;
-  if (!secret) {
-    return new Response("Server misconfigured: MCP_SECRET is not set", {
-      status: 500,
-    });
-  }
-
-  if (!bearerMatches(request.headers.get("authorization"), secret)) {
-    return new Response("Unauthorized", {
-      status: 401,
-      headers: { "WWW-Authenticate": "Bearer" },
-    });
-  }
-
-  return mcpHandler(request);
+  const { resource } = getMcpConfig();
+  return withMcpAuth(mcpHandler, async (_, token) => {
+    if (!token) return undefined;
+    try {
+      await verifyMcpJwt(token);
+      return verifyClerkToken(await auth({ acceptsToken: "oauth_token" }), token);
+    } catch {
+      return undefined;
+    }
+  }, {
+    required: true,
+    requiredScopes: ["profile"],
+    resourceUrl: new URL(resource).origin,
+    resourceMetadataPath: "/.well-known/oauth-protected-resource/api/mcp",
+  })(request);
 }
