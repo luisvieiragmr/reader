@@ -31,7 +31,14 @@ and `MCP_USER_TOKEN_IDENTIFIER` are no longer used and may be removed.
 ## Clerk settings
 
 1. Use the same production Clerk instance as Reader's web app.
-2. Configure **Paths → OAuth consent** to the deployed `/oauth-consent` page.
+2. Configure **Paths → Sign-in** and **Sign-up** to the full URLs of the app's
+   `/sign-in` and `/sign-up` pages. Configure **OAuth consent** to `/oauth-consent`
+   on the same app domain. On a production `vercel.app` instance, do not use the
+   unavailable `accounts.<app>.vercel.app` Account Portal for any of these paths.
+   In Vercel, set `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in` and
+   `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up`. Remove any sign-in/sign-up
+   `FORCE_REDIRECT_URL` environment variables; use fallback redirects instead
+   so the OAuth consent return URL survives login.
 3. Enable consent and **Publish CIMD support**. Your selected **Any compatible
    client** admission setting allows ChatGPT to onboard without manual registration.
 4. Select **JWT access tokens**. Enable the access-token audience (`aud`) claim
