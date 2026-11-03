@@ -4,6 +4,7 @@ import { verifyClerkToken } from "@clerk/mcp-tools/next";
 import { z } from "zod";
 import { listArticlesForMcp, saveArticleForMcp } from "./save";
 import { getMcpConfig, verifyMcpJwt } from "./oauth";
+import { authFailureReason } from "./auth-diagnostics";
 
 /** Build the MCP request handler (tools only — auth is applied in handleMcpRequest). */
 export function createReaderMcpHandler() {
@@ -93,11 +94,22 @@ const mcpHandler = createReaderMcpHandler();
 export async function handleMcpRequest(request: Request): Promise<Response> {
   const { resource } = getMcpConfig();
   return withMcpAuth(mcpHandler, async (_, token) => {
-    if (!token) return undefined;
+    if (!token) {
+      console.info("[reader-mcp] auth: missing_bearer_token");
+      return undefined;
+    }
     try {
       await verifyMcpJwt(token);
-      return verifyClerkToken(await auth({ acceptsToken: "oauth_token" }), token);
+    } catch (error) {
+      console.warn("[reader-mcp] auth:", authFailureReason(error));
+      return undefined;
+    }
+    try {
+      const verified = verifyClerkToken(await auth({ acceptsToken: "oauth_token" }), token);
+      if (!verified) console.warn("[reader-mcp] auth: clerk_rejected_token");
+      return verified;
     } catch {
+      console.warn("[reader-mcp] auth: clerk_verification_failed");
       return undefined;
     }
   }, {
