@@ -25,3 +25,9 @@ test("rejects wrong audience, issuer, expired, missing scope and shared secrets"
     await expect(verifyMcpJwt(value)).rejects.toThrow();
   }
 });
+test("accepts Clerk scp array claims", async () => {
+  const jwt = await new SignJWT({ scp: ["openid", "profile"] })
+    .setProtectedHeader({ alg: "RS256", kid: "test" }).setIssuer(issuer)
+    .setAudience(audience).setSubject("user_a").setIssuedAt().setExpirationTime("5m").sign(keys.privateKey);
+  expect((await verifyMcpJwt(jwt)).sub).toBe("user_a");
+});

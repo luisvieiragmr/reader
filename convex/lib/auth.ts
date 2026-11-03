@@ -1,3 +1,4 @@
+import { oauthScopes } from "../../shared/oauth-scopes";
 import { env } from "../_generated/server";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 
@@ -10,7 +11,7 @@ export async function requireIdentity(ctx: AuthCtx) {
   }
   const audiences = Array.isArray(identity.aud) ? identity.aud : [identity.aud];
   if (env.MCP_RESOURCE_URL && audiences.includes(env.MCP_RESOURCE_URL)) {
-    if (typeof identity.scope !== "string" || !identity.scope.split(" ").includes("profile")) {
+    if (!oauthScopes(identity).includes("profile")) {
       throw new Error("Missing MCP scope");
     }
   }
