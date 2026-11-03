@@ -43,3 +43,17 @@ test("Convex rejects MCP tokens lacking the queue scope", async () => {
     await expect(t.mutation(api.articles.save, article)).rejects.toThrow("Missing MCP scope");
   } finally { vi.unstubAllEnvs(); }
 });
+test("Clerk scp tokens access only their own queue", async () => {
+  const resource = "https://reader.example.com/api/mcp";
+  vi.stubEnv("MCP_RESOURCE_URL", resource);
+  try {
+    const t = convexTest(schema, modules);
+    const user = t.withIdentity({ subject: "clerk_scp_user", aud: resource, scp: ["profile"] });
+    const other = t.withIdentity({ subject: "another_user", aud: resource, scp: ["profile"] });
+    const id = await user.mutation(api.articles.save, article);
+    expect((await user.query(api.articles.list, {}))[0]._id).toBe(id);
+    expect(await other.query(api.articles.list, {})).toEqual([]);
+    const unscoped = t.withIdentity({ subject: "clerk_scp_user", aud: resource, scp: ["email"] });
+    await expect(unscoped.query(api.articles.list, {})).rejects.toThrow("Missing MCP scope");
+  } finally { vi.unstubAllEnvs(); }
+});

@@ -1,3 +1,4 @@
+import { oauthScopes } from "../shared/oauth-scopes";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
 export function getMcpConfig() {
@@ -15,7 +16,7 @@ export async function verifyMcpJwt(token: string) {
     issuer, audience: resource, algorithms: ["RS256"],
     requiredClaims: ["sub", "exp", "iat"],
   });
-  if (!payload.sub || typeof payload.scope !== "string" || !payload.scope.split(" ").includes("profile")) {
+  if (!payload.sub || !oauthScopes(payload).includes("profile")) {
     throw new Error("Missing user or scope");
   }
   return payload;
