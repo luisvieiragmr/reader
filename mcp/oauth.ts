@@ -1,3 +1,4 @@
+import { MissingMcpScope } from "./auth-diagnostics";
 import { oauthScopes } from "../shared/oauth-scopes";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
@@ -17,7 +18,7 @@ export async function verifyMcpJwt(token: string) {
     requiredClaims: ["sub", "exp", "iat"],
   });
   if (!payload.sub || !oauthScopes(payload).includes("profile")) {
-    throw new Error("Missing user or scope");
+    throw new MissingMcpScope("Missing user or scope");
   }
   return payload;
 }
