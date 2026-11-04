@@ -59,15 +59,19 @@ function ReaderBody({ id }: { id: Id<"articles"> }) {
       <h1 className="article-title">{article.title}</h1>
       <p className="article-meta mt-4">
         {formatMeta(article.wordCount, article.publishedAt)}
-        {article.wordCount > 0 || article.publishedAt ? "   " : null}
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white/45 hover:text-white/70"
-        >
-          Original
-        </a>
+        {!article.url.startsWith("urn:reader:text:") && (
+          <>
+            {article.wordCount > 0 || article.publishedAt ? "   " : null}
+            <a
+              href={article.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/45 hover:text-white/70"
+            >
+              Original
+            </a>
+          </>
+        )}
       </p>
 
       <article
