@@ -14,7 +14,10 @@ export default {
       applicationID: "convex",
     },
     ...(env.MCP_RESOURCE_URL ? [{
-      domain: env.CLERK_JWT_ISSUER_DOMAIN!,
+      type: "customJwt" as const,
+      issuer: env.CLERK_JWT_ISSUER_DOMAIN!,
+      jwks: `${env.CLERK_JWT_ISSUER_DOMAIN}/.well-known/jwks.json`,
+      algorithm: "RS256" as const,
       applicationID: env.MCP_RESOURCE_URL,
     }] : []),
   ],
