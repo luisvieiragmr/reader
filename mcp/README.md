@@ -2,8 +2,8 @@
 
 Endpoint: `https://<your-app>/api/mcp` (Streamable HTTP).
 
-`save_article` extracts and saves a public URL; `list_articles` returns the user's
-100 most recent articles. Both require a Clerk OAuth JWT with `profile` scope.
+`save_article` extracts and saves a public URL; `save_text_article` saves a title, plain-text body and optional source label directly from a conversation; `list_articles` returns the user's
+100 most recent articles. All three require a Clerk OAuth JWT with `profile` scope.
 This integration uses that scope to authorize access to the signed-in user's
 Reader queue. The verified token is forwarded to Convex, which derives ownership
 from its issuer and subject (`tokenIdentifier`), exactly as the web app does.
