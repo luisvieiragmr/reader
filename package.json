@@ -23,6 +23,7 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "convex": "^1.46.0",
+    "exa-js": "^2.27.0",
     "jose": "^6.2.14",
     "lucide-react": "^1.54.0",
     "mcp-handler": "^2.3.0",
